@@ -1,0 +1,446 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Indian Nutrition & Weight Tracker</title>
+<link href="https://fonts.googleapis.com/css2?family=Tiro+Devanagari+Hindi&family=DM+Sans:wght@400;500;600&display=swap" rel="stylesheet">
+<style>
+  *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+  :root {
+    --teal: #1D9E75; --teal-light: #E1F5EE; --teal-dark: #085041;
+    --amber: #EF9F27; --amber-light: #FAEEDA;
+    --coral: #D85A30; --coral-light: #FAECE7;
+    --blue: #378ADD; --blue-light: #E6F1FB;
+    --green: #639922; --green-light: #EAF3DE;
+    --red: #E24B4A; --red-light: #FCEBEB;
+    --bg: #F8F6F1; --surface: #FFFFFF; --border: rgba(0,0,0,0.1);
+    --text: #1A1A1A; --muted: #666; --faint: #999;
+    --radius: 12px; --radius-sm: 8px; --radius-pill: 20px;
+    --shadow: 0 2px 8px rgba(0,0,0,0.07);
+  }
+  body { font-family: 'DM Sans', sans-serif; background: var(--bg); color: var(--text); min-height: 100vh; }
+  .container { max-width: 960px; margin: 0 auto; padding: 24px 16px 60px; }
+
+  /* Header */
+  .header { text-align: center; margin-bottom: 28px; }
+  .header-badge { display: inline-block; background: var(--teal-light); color: var(--teal-dark); font-size: 12px; font-weight: 600; padding: 4px 14px; border-radius: var(--radius-pill); margin-bottom: 10px; letter-spacing: 0.5px; text-transform: uppercase; }
+  .header h1 { font-size: 28px; font-weight: 600; color: var(--text); margin-bottom: 6px; }
+  .header p { font-size: 14px; color: var(--muted); }
+
+  /* Tabs */
+  .tabs { display: flex; gap: 6px; flex-wrap: wrap; margin-bottom: 16px; }
+  .tab { padding: 7px 16px; font-size: 13px; font-weight: 500; border-radius: var(--radius-pill); border: 1.5px solid var(--border); background: var(--surface); color: var(--muted); cursor: pointer; transition: all 0.15s; }
+  .tab.active { background: var(--teal); color: #fff; border-color: var(--teal); }
+  .tab:hover:not(.active) { background: var(--teal-light); border-color: var(--teal); color: var(--teal-dark); }
+
+  /* Search */
+  .search-wrap { position: relative; margin-bottom: 16px; }
+  .search-wrap input { width: 100%; padding: 11px 16px 11px 40px; border-radius: var(--radius); border: 1.5px solid var(--border); background: var(--surface); font-size: 14px; color: var(--text); box-shadow: var(--shadow); outline: none; transition: border 0.15s; }
+  .search-wrap input:focus { border-color: var(--teal); }
+  .search-icon { position: absolute; left: 13px; top: 50%; transform: translateY(-50%); color: var(--muted); font-size: 16px; pointer-events: none; }
+
+  /* Food grid */
+  .food-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(155px, 1fr)); gap: 10px; margin-bottom: 16px; max-height: 340px; overflow-y: auto; padding-right: 4px; }
+  .food-card { background: var(--surface); border: 1.5px solid var(--border); border-radius: var(--radius); padding: 12px 14px; cursor: pointer; transition: all 0.15s; box-shadow: var(--shadow); }
+  .food-card:hover { border-color: var(--teal); transform: translateY(-1px); }
+  .food-card.selected { border-color: var(--teal); background: var(--teal-light); box-shadow: 0 0 0 3px rgba(29,158,117,0.15); }
+  .food-card .fname { font-size: 13px; font-weight: 600; color: var(--text); margin-bottom: 2px; }
+  .food-card .fhindi { font-size: 11px; color: var(--faint); margin-bottom: 8px; }
+  .food-card .fcal { display: inline-block; font-size: 11px; font-weight: 600; padding: 2px 9px; border-radius: 10px; background: var(--teal-light); color: var(--teal-dark); }
+  .empty-state { text-align: center; padding: 28px; color: var(--muted); font-size: 14px; grid-column: 1/-1; }
+
+  /* Qty */
+  .qty-card { background: var(--surface); border-radius: var(--radius); border: 1.5px solid var(--border); padding: 14px 18px; margin-bottom: 16px; box-shadow: var(--shadow); display: flex; align-items: center; gap: 14px; }
+  .qty-card label { font-size: 13px; color: var(--muted); white-space: nowrap; font-weight: 500; }
+  .qty-card input[type=range] { flex: 1; accent-color: var(--teal); }
+  .qty-val { font-size: 14px; font-weight: 600; color: var(--teal); min-width: 70px; text-align: right; }
+
+  /* Metrics */
+  .metrics-grid { display: grid; grid-template-columns: repeat(4, 1fr); gap: 10px; margin-bottom: 16px; }
+  .metric { background: var(--surface); border-radius: var(--radius); border: 1.5px solid var(--border); padding: 14px 16px; box-shadow: var(--shadow); text-align: center; }
+  .metric .m-label { font-size: 11px; color: var(--muted); font-weight: 600; text-transform: uppercase; letter-spacing: 0.5px; margin-bottom: 6px; }
+  .metric .m-val { font-size: 26px; font-weight: 600; color: var(--text); line-height: 1; }
+  .metric .m-unit { font-size: 12px; color: var(--faint); margin-top: 2px; }
+  .metric.highlight { background: var(--teal); border-color: var(--teal); }
+  .metric.highlight .m-label, .metric.highlight .m-val, .metric.highlight .m-unit { color: #fff; }
+
+  /* Macro detail */
+  .macro-card { background: var(--surface); border-radius: var(--radius); border: 1.5px solid var(--border); padding: 18px 20px; margin-bottom: 16px; box-shadow: var(--shadow); display: none; }
+  .macro-card h3 { font-size: 15px; font-weight: 600; margin-bottom: 14px; color: var(--text); }
+  .macro-row { display: flex; align-items: center; gap: 10px; margin-bottom: 10px; }
+  .macro-lbl { font-size: 13px; color: var(--muted); width: 80px; flex-shrink: 0; font-weight: 500; }
+  .macro-bar-bg { flex: 1; height: 8px; border-radius: 4px; background: #F0EDE6; overflow: hidden; }
+  .macro-bar { height: 100%; border-radius: 4px; transition: width 0.4s ease; min-width: 2px; }
+  .macro-num { font-size: 13px; font-weight: 600; color: var(--text); min-width: 50px; text-align: right; }
+  .add-log-btn { width: 100%; margin-top: 14px; padding: 10px; border-radius: var(--radius-sm); border: 2px dashed var(--teal); background: transparent; color: var(--teal); font-size: 14px; font-weight: 600; cursor: pointer; transition: all 0.15s; }
+  .add-log-btn:hover { background: var(--teal-light); }
+
+  /* Meal Log */
+  .section-card { background: var(--surface); border-radius: var(--radius); border: 1.5px solid var(--border); padding: 18px 20px; margin-bottom: 16px; box-shadow: var(--shadow); }
+  .section-card h3 { font-size: 15px; font-weight: 600; margin-bottom: 14px; color: var(--text); display: flex; align-items: center; gap: 8px; }
+  .section-card h3 .badge { font-size: 11px; font-weight: 600; padding: 2px 9px; border-radius: 10px; background: var(--teal-light); color: var(--teal-dark); }
+  .log-item { display: flex; align-items: center; justify-content: space-between; padding: 8px 0; border-bottom: 1px solid var(--bg); }
+  .log-item:last-child { border-bottom: none; }
+  .log-name { font-size: 13px; font-weight: 600; color: var(--text); }
+  .log-sub { font-size: 11px; color: var(--muted); }
+  .log-cal { font-size: 13px; font-weight: 600; color: var(--teal); margin-right: 8px; }
+  .remove-btn { background: none; border: none; color: var(--red); cursor: pointer; font-size: 18px; line-height: 1; padding: 0 2px; }
+  .log-totals { display: flex; flex-wrap: wrap; gap: 10px; margin-top: 14px; padding-top: 14px; border-top: 1.5px solid var(--bg); }
+  .total-chip { display: flex; align-items: center; gap: 6px; background: var(--bg); border-radius: var(--radius-sm); padding: 6px 12px; }
+  .total-chip .tc-label { font-size: 12px; color: var(--muted); }
+  .total-chip .tc-val { font-size: 14px; font-weight: 700; color: var(--text); }
+
+  /* Goal Calculator */
+  .goal-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; }
+  .form-group { display: flex; flex-direction: column; gap: 5px; }
+  .form-group label { font-size: 12px; color: var(--muted); font-weight: 600; text-transform: uppercase; letter-spacing: 0.4px; }
+  .form-group input, .form-group select { padding: 9px 12px; border-radius: var(--radius-sm); border: 1.5px solid var(--border); background: var(--bg); font-size: 14px; color: var(--text); font-family: inherit; outline: none; transition: border 0.15s; }
+  .form-group input:focus, .form-group select:focus { border-color: var(--teal); background: #fff; }
+  .goal-result { margin-top: 16px; display: flex; flex-wrap: wrap; gap: 10px; }
+  .goal-chip { display: flex; flex-direction: column; padding: 12px 16px; border-radius: var(--radius-sm); flex: 1; min-width: 130px; }
+  .goal-chip .gc-label { font-size: 11px; font-weight: 600; text-transform: uppercase; letter-spacing: 0.4px; margin-bottom: 4px; }
+  .goal-chip .gc-val { font-size: 18px; font-weight: 700; }
+  .gc-blue { background: var(--blue-light); } .gc-blue .gc-label { color: #185FA5; } .gc-blue .gc-val { color: #185FA5; }
+  .gc-teal { background: var(--teal-light); } .gc-teal .gc-label { color: var(--teal-dark); } .gc-teal .gc-val { color: var(--teal); }
+  .gc-amber { background: var(--amber-light); } .gc-amber .gc-label { color: #854F0B; } .gc-amber .gc-val { color: var(--amber); }
+  .gc-green { background: var(--green-light); } .gc-green .gc-label { color: #27500A; } .gc-green .gc-val { color: var(--green); }
+  .gc-coral { background: var(--coral-light); } .gc-coral .gc-label { color: #993C1D; } .gc-coral .gc-val { color: var(--coral); }
+
+  @media (max-width: 600px) {
+    .metrics-grid { grid-template-columns: repeat(2, 1fr); }
+    .goal-grid { grid-template-columns: 1fr; }
+  }
+</style>
+</head>
+<body>
+<div class="container">
+
+  <div class="header">
+    <div class="header-badge">🍱 Made for India</div>
+    <h1>Indian Nutrition & Weight Tracker</h1>
+    <p>Vegetables · Fruits · Millets · Dairy · Meals · Liquids — complete macro tracker</p>
+  </div>
+
+  <div class="tabs" id="categoryTabs"></div>
+
+  <div class="search-wrap">
+    <span class="search-icon">🔍</span>
+    <input type="text" id="searchInput" placeholder="Search food (e.g. paneer, ragi, mango, dal...)">
+  </div>
+
+  <div class="food-grid" id="foodGrid"></div>
+
+  <div class="qty-card">
+    <label>Quantity</label>
+    <input type="range" id="qtySlider" min="10" max="500" step="10" value="100">
+    <span class="qty-val" id="qtyVal">100 g/ml</span>
+  </div>
+
+  <div class="metrics-grid">
+    <div class="metric highlight">
+      <div class="m-label">Calories</div>
+      <div class="m-val" id="dispCal">0</div>
+      <div class="m-unit">kcal</div>
+    </div>
+    <div class="metric">
+      <div class="m-label">Protein</div>
+      <div class="m-val" id="dispProt">0</div>
+      <div class="m-unit">grams</div>
+    </div>
+    <div class="metric">
+      <div class="m-label">Carbs</div>
+      <div class="m-val" id="dispCarb">0</div>
+      <div class="m-unit">grams</div>
+    </div>
+    <div class="metric">
+      <div class="m-label">Fat</div>
+      <div class="m-val" id="dispFat">0</div>
+      <div class="m-unit">grams</div>
+    </div>
+  </div>
+
+  <div class="macro-card" id="macroCard">
+    <h3 id="macroTitle">Macronutrient Breakdown</h3>
+    <div class="macro-row">
+      <span class="macro-lbl">Protein</span>
+      <div class="macro-bar-bg"><div class="macro-bar" id="bProt" style="background:#1D9E75"></div></div>
+      <span class="macro-num" id="bProtVal">—</span>
+    </div>
+    <div class="macro-row">
+      <span class="macro-lbl">Carbs</span>
+      <div class="macro-bar-bg"><div class="macro-bar" id="bCarb" style="background:#EF9F27"></div></div>
+      <span class="macro-num" id="bCarbVal">—</span>
+    </div>
+    <div class="macro-row">
+      <span class="macro-lbl">Fat</span>
+      <div class="macro-bar-bg"><div class="macro-bar" id="bFat" style="background:#D85A30"></div></div>
+      <span class="macro-num" id="bFatVal">—</span>
+    </div>
+    <div class="macro-row">
+      <span class="macro-lbl">Fiber</span>
+      <div class="macro-bar-bg"><div class="macro-bar" id="bFiber" style="background:#378ADD"></div></div>
+      <span class="macro-num" id="bFiberVal">—</span>
+    </div>
+    <button class="add-log-btn" id="addToLogBtn">+ Add to Today's Meal Log</button>
+  </div>
+
+  <div class="section-card">
+    <h3>Today's Meal Log <span class="badge" id="logCount">0 items</span></h3>
+    <div id="logList"><div class="empty-state">Select a food above and click "Add to Today's Meal Log"</div></div>
+    <div class="log-totals" id="logTotals" style="display:none;"></div>
+  </div>
+
+  <div class="section-card">
+    <h3>Weight Management Calculator</h3>
+    <div class="goal-grid">
+      <div class="form-group"><label>Weight (kg)</label><input type="number" id="gWeight" value="65" min="30" max="200"></div>
+      <div class="form-group"><label>Height (cm)</label><input type="number" id="gHeight" value="165" min="100" max="220"></div>
+      <div class="form-group"><label>Age</label><input type="number" id="gAge" value="28" min="10" max="90"></div>
+      <div class="form-group"><label>Gender</label>
+        <select id="gGender"><option value="male">Male</option><option value="female">Female</option></select>
+      </div>
+      <div class="form-group"><label>Activity Level</label>
+        <select id="gActivity">
+          <option value="1.2">Sedentary (desk job)</option>
+          <option value="1.375">Lightly active</option>
+          <option value="1.55" selected>Moderately active</option>
+          <option value="1.725">Very active</option>
+          <option value="1.9">Extremely active</option>
+        </select>
+      </div>
+      <div class="form-group"><label>Goal</label>
+        <select id="gGoal">
+          <option value="lose">Lose weight</option>
+          <option value="maintain" selected>Maintain weight</option>
+          <option value="gain">Gain weight</option>
+        </select>
+      </div>
+    </div>
+    <div class="goal-result" id="goalResult"></div>
+  </div>
+
+</div>
+
+<script>
+const FOODS = [
+  {name:"Spinach",hindi:"Palak",cat:"Vegetables",cal:23,prot:2.9,carb:3.6,fat:0.4,fiber:2.2},
+  {name:"Potato",hindi:"Aloo",cat:"Vegetables",cal:77,prot:2.0,carb:17,fat:0.1,fiber:2.2},
+  {name:"Tomato",hindi:"Tamatar",cat:"Vegetables",cal:18,prot:0.9,carb:3.9,fat:0.2,fiber:1.2},
+  {name:"Onion",hindi:"Pyaz",cat:"Vegetables",cal:40,prot:1.1,carb:9.3,fat:0.1,fiber:1.7},
+  {name:"Brinjal",hindi:"Baingan",cat:"Vegetables",cal:25,prot:1.0,carb:6.0,fat:0.2,fiber:3.0},
+  {name:"Cauliflower",hindi:"Gobhi",cat:"Vegetables",cal:25,prot:1.9,carb:5.0,fat:0.3,fiber:2.0},
+  {name:"Green Peas",hindi:"Matar",cat:"Vegetables",cal:81,prot:5.4,carb:14,fat:0.4,fiber:5.1},
+  {name:"Bitter Gourd",hindi:"Karela",cat:"Vegetables",cal:17,prot:1.0,carb:3.7,fat:0.2,fiber:2.8},
+  {name:"Bottle Gourd",hindi:"Lauki",cat:"Vegetables",cal:14,prot:0.6,carb:3.4,fat:0.02,fiber:0.5},
+  {name:"Lady Finger",hindi:"Bhindi",cat:"Vegetables",cal:33,prot:1.9,carb:7.5,fat:0.2,fiber:3.2},
+  {name:"Carrot",hindi:"Gajar",cat:"Vegetables",cal:41,prot:0.9,carb:10,fat:0.2,fiber:2.8},
+  {name:"Radish",hindi:"Mooli",cat:"Vegetables",cal:16,prot:0.7,carb:3.4,fat:0.1,fiber:1.6},
+  {name:"Drumstick",hindi:"Sahjan",cat:"Vegetables",cal:64,prot:9.4,carb:8.5,fat:1.4,fiber:3.2},
+  {name:"Ridge Gourd",hindi:"Turai",cat:"Vegetables",cal:20,prot:1.2,carb:4.4,fat:0.2,fiber:0.5},
+  {name:"Fenugreek Leaves",hindi:"Methi",cat:"Vegetables",cal:49,prot:4.4,carb:6.0,fat:0.9,fiber:1.1},
+  {name:"Mango",hindi:"Aam",cat:"Fruits",cal:60,prot:0.8,carb:15,fat:0.4,fiber:1.6},
+  {name:"Banana",hindi:"Kela",cat:"Fruits",cal:89,prot:1.1,carb:23,fat:0.3,fiber:2.6},
+  {name:"Apple",hindi:"Seb",cat:"Fruits",cal:52,prot:0.3,carb:14,fat:0.2,fiber:2.4},
+  {name:"Guava",hindi:"Amrood",cat:"Fruits",cal:68,prot:2.6,carb:14,fat:1.0,fiber:5.4},
+  {name:"Papaya",hindi:"Papita",cat:"Fruits",cal:43,prot:0.5,carb:11,fat:0.3,fiber:1.7},
+  {name:"Pomegranate",hindi:"Anar",cat:"Fruits",cal:83,prot:1.7,carb:19,fat:1.2,fiber:4.0},
+  {name:"Watermelon",hindi:"Tarbooz",cat:"Fruits",cal:30,prot:0.6,carb:7.6,fat:0.2,fiber:0.4},
+  {name:"Orange",hindi:"Santra",cat:"Fruits",cal:47,prot:0.9,carb:12,fat:0.1,fiber:2.4},
+  {name:"Chickoo / Sapota",hindi:"Cheeku",cat:"Fruits",cal:83,prot:0.4,carb:20,fat:1.1,fiber:5.3},
+  {name:"Amla (Gooseberry)",hindi:"Amla",cat:"Fruits",cal:44,prot:0.9,carb:10,fat:0.6,fiber:3.4},
+  {name:"Jamun",hindi:"Jamun",cat:"Fruits",cal:62,prot:0.7,carb:14,fat:0.2,fiber:0.6},
+  {name:"Jowar",hindi:"Jowar",cat:"Millets",cal:329,prot:10.4,carb:72,fat:3.1,fiber:6.7},
+  {name:"Bajra",hindi:"Bajra",cat:"Millets",cal:361,prot:11.6,carb:67,fat:5.0,fiber:1.2},
+  {name:"Ragi / Finger Millet",hindi:"Ragi",cat:"Millets",cal:328,prot:7.3,carb:72,fat:1.3,fiber:3.6},
+  {name:"Foxtail Millet",hindi:"Kangni",cat:"Millets",cal:331,prot:12.3,carb:63,fat:4.3,fiber:6.7},
+  {name:"Kodo Millet",hindi:"Kodon",cat:"Millets",cal:309,prot:8.3,carb:65,fat:1.4,fiber:9.0},
+  {name:"Barnyard Millet",hindi:"Sanwa",cat:"Millets",cal:300,prot:6.2,carb:65,fat:2.2,fiber:12.6},
+  {name:"Little Millet",hindi:"Kutki",cat:"Millets",cal:329,prot:7.7,carb:67,fat:4.7,fiber:7.6},
+  {name:"Milk (full fat)",hindi:"Doodh",cat:"Dairy",cal:61,prot:3.2,carb:4.8,fat:3.3,fiber:0},
+  {name:"Curd / Dahi",hindi:"Dahi",cat:"Dairy",cal:60,prot:3.5,carb:4.7,fat:3.3,fiber:0},
+  {name:"Paneer",hindi:"Paneer",cat:"Dairy",cal:265,prot:18,carb:1.2,fat:20,fiber:0},
+  {name:"Ghee",hindi:"Ghee",cat:"Dairy",cal:900,prot:0,carb:0,fat:100,fiber:0},
+  {name:"Butter",hindi:"Makhan",cat:"Dairy",cal:717,prot:0.9,carb:0.1,fat:81,fiber:0},
+  {name:"Buttermilk (Chaas)",hindi:"Chaas",cat:"Dairy",cal:40,prot:3.3,carb:4.8,fat:1.0,fiber:0},
+  {name:"Khoya / Mawa",hindi:"Mawa",cat:"Dairy",cal:421,prot:20,carb:26,fat:28,fiber:0},
+  {name:"Masala Chai",hindi:"Chai",cat:"Liquids",cal:35,prot:1.1,carb:5.8,fat:1.2,fiber:0},
+  {name:"Coconut Water",hindi:"Nariyal Paani",cat:"Liquids",cal:19,prot:0.7,carb:3.7,fat:0.2,fiber:1.1},
+  {name:"Sweet Lassi",hindi:"Lassi",cat:"Liquids",cal:79,prot:3.5,carb:10,fat:3.0,fiber:0},
+  {name:"Sugarcane Juice",hindi:"Ganna Juice",cat:"Liquids",cal:73,prot:0.4,carb:18,fat:0.3,fiber:0},
+  {name:"Nimbu Pani",hindi:"Nimbu Pani",cat:"Liquids",cal:25,prot:0.2,carb:6.5,fat:0.1,fiber:0},
+  {name:"Aam Panna",hindi:"Aam Panna",cat:"Liquids",cal:60,prot:0.4,carb:15,fat:0.1,fiber:0.5},
+  {name:"Rose Sharbat",hindi:"Rooh Afza",cat:"Liquids",cal:66,prot:0,carb:16,fat:0,fiber:0},
+  {name:"Dal Tadka",hindi:"Dal Tadka",cat:"Meals",cal:130,prot:8,carb:18,fat:4,fiber:4},
+  {name:"Wheat Roti",hindi:"Roti",cat:"Meals",cal:104,prot:3.1,carb:22,fat:0.9,fiber:2.7},
+  {name:"Steamed Rice",hindi:"Chawal",cat:"Meals",cal:130,prot:2.7,carb:28,fat:0.3,fiber:0.4},
+  {name:"Idli",hindi:"Idli",cat:"Meals",cal:58,prot:2.0,carb:12,fat:0.3,fiber:0.8},
+  {name:"Dosa",hindi:"Dosa",cat:"Meals",cal:133,prot:3.5,carb:25,fat:2.0,fiber:0.8},
+  {name:"Poha",hindi:"Poha",cat:"Meals",cal:130,prot:2.5,carb:26,fat:2.0,fiber:1.5},
+  {name:"Upma",hindi:"Upma",cat:"Meals",cal:130,prot:3.0,carb:23,fat:4.0,fiber:1.5},
+  {name:"Rajma",hindi:"Rajma",cat:"Meals",cal:127,prot:8.7,carb:22,fat:0.5,fiber:6.4},
+  {name:"Chole",hindi:"Chole",cat:"Meals",cal:164,prot:8.9,carb:27,fat:2.6,fiber:7.6},
+  {name:"Khichdi",hindi:"Khichdi",cat:"Meals",cal:130,prot:5.0,carb:22,fat:3.0,fiber:3.0},
+  {name:"Palak Paneer",hindi:"Palak Paneer",cat:"Meals",cal:185,prot:9.5,carb:8,fat:13,fiber:2.5},
+  {name:"Aloo Paratha",hindi:"Aloo Paratha",cat:"Meals",cal:220,prot:5.0,carb:35,fat:8.0,fiber:2.5},
+  {name:"Biryani (Veg)",hindi:"Biryani",cat:"Meals",cal:180,prot:4.5,carb:32,fat:5.0,fiber:2.0},
+  {name:"Sambar",hindi:"Sambar",cat:"Meals",cal:55,prot:3.0,carb:8.5,fat:1.2,fiber:2.5},
+  {name:"Moong Dal (raw)",hindi:"Moong Dal",cat:"Food",cal:347,prot:24,carb:63,fat:1.2,fiber:16},
+  {name:"Chana Dal (raw)",hindi:"Chana Dal",cat:"Food",cal:360,prot:22,carb:61,fat:5.0,fiber:12},
+  {name:"Masoor Dal (raw)",hindi:"Masoor Dal",cat:"Food",cal:353,prot:26,carb:60,fat:1.1,fiber:10},
+  {name:"Urad Dal (raw)",hindi:"Urad Dal",cat:"Food",cal:341,prot:25,carb:59,fat:1.6,fiber:18},
+  {name:"Toor Dal (raw)",hindi:"Arhar Dal",cat:"Food",cal:335,prot:22,carb:63,fat:1.7,fiber:15},
+  {name:"Peanuts",hindi:"Moongphali",cat:"Food",cal:567,prot:26,carb:16,fat:49,fiber:8.5},
+  {name:"Coconut (fresh)",hindi:"Nariyal",cat:"Food",cal:354,prot:3.3,carb:15,fat:33,fiber:9.0},
+  {name:"Sesame Seeds",hindi:"Til",cat:"Food",cal:573,prot:17.7,carb:23,fat:50,fiber:11.8},
+  {name:"Jaggery",hindi:"Gur",cat:"Food",cal:383,prot:0.4,carb:98,fat:0.1,fiber:0},
+  {name:"Wheat Flour (Atta)",hindi:"Atta",cat:"Food",cal:340,prot:12,carb:70,fat:1.7,fiber:11},
+  {name:"Rice (raw)",hindi:"Chawal",cat:"Food",cal:349,prot:6.8,carb:79,fat:0.5,fiber:0.4},
+];
+
+const CATEGORIES = ["All","Vegetables","Fruits","Millets","Dairy","Liquids","Meals","Food"];
+let selectedFood = null, logItems = [], activeCategory = "All", searchQuery = "";
+
+function getQty() { return parseInt(document.getElementById('qtySlider').value); }
+
+function filteredFoods() {
+  return FOODS.filter(f => {
+    const mc = activeCategory === "All" || f.cat === activeCategory;
+    const ms = !searchQuery || f.name.toLowerCase().includes(searchQuery) || f.hindi.toLowerCase().includes(searchQuery);
+    return mc && ms;
+  });
+}
+
+function renderTabs() {
+  const tabs = document.getElementById('categoryTabs');
+  tabs.innerHTML = '';
+  CATEGORIES.forEach(cat => {
+    const btn = document.createElement('button');
+    btn.className = 'tab' + (cat === activeCategory ? ' active' : '');
+    btn.textContent = cat;
+    btn.onclick = () => { activeCategory = cat; renderTabs(); renderGrid(); };
+    tabs.appendChild(btn);
+  });
+}
+
+function renderGrid() {
+  const grid = document.getElementById('foodGrid');
+  const foods = filteredFoods();
+  if (!foods.length) {
+    grid.innerHTML = '<div class="empty-state">No foods found. Try a different search or category.</div>';
+    return;
+  }
+  grid.innerHTML = '';
+  foods.forEach(f => {
+    const card = document.createElement('div');
+    card.className = 'food-card' + (selectedFood === f ? ' selected' : '');
+    card.innerHTML = `<div class="fname">${f.name}</div><div class="fhindi">${f.hindi}</div><div class="fcal">${f.cal} kcal/100g</div>`;
+    card.onclick = () => { selectedFood = f; renderGrid(); updateDisplay(); };
+    grid.appendChild(card);
+  });
+}
+
+function updateDisplay() {
+  const qty = getQty();
+  document.getElementById('qtyVal').textContent = qty + ' g/ml';
+  if (!selectedFood) {
+    ['Cal','Prot','Carb','Fat'].forEach(k => document.getElementById('disp'+k).textContent = '0');
+    document.getElementById('macroCard').style.display = 'none';
+    return;
+  }
+  const f = selectedFood, r = qty / 100;
+  const cal = Math.round(f.cal * r);
+  const prot = parseFloat((f.prot * r).toFixed(1));
+  const carb = parseFloat((f.carb * r).toFixed(1));
+  const fat = parseFloat((f.fat * r).toFixed(1));
+  const fiber = parseFloat((f.fiber * r).toFixed(1));
+  document.getElementById('dispCal').textContent = cal;
+  document.getElementById('dispProt').textContent = prot;
+  document.getElementById('dispCarb').textContent = carb;
+  document.getElementById('dispFat').textContent = fat;
+  document.getElementById('macroCard').style.display = 'block';
+  document.getElementById('macroTitle').textContent = f.name + ' (' + qty + 'g)  —  Macros';
+  const total = prot + carb + fat + fiber || 1;
+  document.getElementById('bProt').style.width = Math.round(prot/total*100)+'%';
+  document.getElementById('bCarb').style.width = Math.round(carb/total*100)+'%';
+  document.getElementById('bFat').style.width = Math.round(fat/total*100)+'%';
+  document.getElementById('bFiber').style.width = Math.round(fiber/total*100)+'%';
+  document.getElementById('bProtVal').textContent = prot+'g';
+  document.getElementById('bCarbVal').textContent = carb+'g';
+  document.getElementById('bFatVal').textContent = fat+'g';
+  document.getElementById('bFiberVal').textContent = fiber+'g';
+}
+
+function renderLog() {
+  const list = document.getElementById('logList');
+  const totals = document.getElementById('logTotals');
+  document.getElementById('logCount').textContent = logItems.length + (logItems.length===1?' item':' items');
+  if (!logItems.length) {
+    list.innerHTML = '<div class="empty-state">Select a food above and click "Add to Today\'s Meal Log"</div>';
+    totals.style.display = 'none';
+    return;
+  }
+  list.innerHTML = '';
+  let tCal=0, tProt=0, tCarb=0, tFat=0;
+  logItems.forEach((item, i) => {
+    tCal += item.cal; tProt += item.prot; tCarb += item.carb; tFat += item.fat;
+    const row = document.createElement('div'); row.className = 'log-item';
+    row.innerHTML = `<div><div class="log-name">${item.name}</div><div class="log-sub">${item.qty}g · P:${item.prot.toFixed(1)}g · C:${item.carb.toFixed(1)}g · F:${item.fat.toFixed(1)}g</div></div><div style="display:flex;align-items:center;gap:4px;"><span class="log-cal">${item.cal} kcal</span><button class="remove-btn" onclick="removeLog(${i})" title="Remove">×</button></div>`;
+    list.appendChild(row);
+  });
+  totals.style.display = 'flex';
+  totals.innerHTML = `
+    <div class="total-chip"><span class="tc-label">Total Calories</span><span class="tc-val" style="color:var(--teal)">${Math.round(tCal)} kcal</span></div>
+    <div class="total-chip"><span class="tc-label">Protein</span><span class="tc-val">${tProt.toFixed(1)}g</span></div>
+    <div class="total-chip"><span class="tc-label">Carbs</span><span class="tc-val">${tCarb.toFixed(1)}g</span></div>
+    <div class="total-chip"><span class="tc-label">Fat</span><span class="tc-val">${tFat.toFixed(1)}g</span></div>
+  `;
+}
+
+window.removeLog = function(i) { logItems.splice(i,1); renderLog(); };
+
+document.getElementById('addToLogBtn').onclick = function() {
+  if (!selectedFood) return;
+  const qty = getQty(), r = qty/100;
+  logItems.push({name:selectedFood.name, qty, cal:Math.round(selectedFood.cal*r), prot:parseFloat((selectedFood.prot*r).toFixed(1)), carb:parseFloat((selectedFood.carb*r).toFixed(1)), fat:parseFloat((selectedFood.fat*r).toFixed(1))});
+  renderLog();
+};
+
+document.getElementById('qtySlider').oninput = updateDisplay;
+document.getElementById('searchInput').oninput = function() { searchQuery = this.value.toLowerCase().trim(); renderGrid(); };
+
+function calcGoal() {
+  const w = parseFloat(document.getElementById('gWeight').value)||65;
+  const h = parseFloat(document.getElementById('gHeight').value)||165;
+  const age = parseFloat(document.getElementById('gAge').value)||28;
+  const gender = document.getElementById('gGender').value;
+  const activity = parseFloat(document.getElementById('gActivity').value)||1.55;
+  const goal = document.getElementById('gGoal').value;
+  let bmr = gender==='male' ? 10*w+6.25*h-5*age+5 : 10*w+6.25*h-5*age-161;
+  const tdee = Math.round(bmr*activity);
+  const bmi = (w/((h/100)**2)).toFixed(1);
+  let bmiLabel = bmi<18.5?'Underweight':bmi<25?'Normal weight':bmi<30?'Overweight':'Obese';
+  let targetCal = tdee;
+  let goalLabel = 'Maintain weight';
+  if (goal==='lose') { targetCal = tdee-500; goalLabel = 'Lose ~0.5kg/week'; }
+  if (goal==='gain') { targetCal = tdee+300; goalLabel = 'Gain ~0.3kg/week'; }
+  const protGoal = Math.round(w * 1.6);
+  const res = document.getElementById('goalResult');
+  const bmiColor = bmi<18.5?'gc-coral':bmi<25?'gc-teal':bmi<30?'gc-amber':'gc-coral';
+  res.innerHTML = `
+    <div class="goal-chip ${bmiColor}"><span class="gc-label">BMI</span><span class="gc-val">${bmi} <span style="font-size:13px;font-weight:500;">(${bmiLabel})</span></span></div>
+    <div class="goal-chip gc-blue"><span class="gc-label">Daily Burn (TDEE)</span><span class="gc-val">${tdee} kcal</span></div>
+    <div class="goal-chip gc-teal"><span class="gc-label">Target Calories</span><span class="gc-val">${Math.round(targetCal)} kcal</span></div>
+    <div class="goal-chip gc-green"><span class="gc-label">Protein Goal</span><span class="gc-val">${protGoal}g/day</span></div>
+  `;
+}
+
+['gWeight','gHeight','gAge','gGender','gActivity','gGoal'].forEach(id => {
+  document.getElementById(id).addEventListener('input', calcGoal);
+  document.getElementById(id).addEventListener('change', calcGoal);
+});
+
+renderTabs(); renderGrid(); updateDisplay(); renderLog(); calcGoal();
+</script>
+</body>
+</html>
